@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+    <div class="p-4">
+        <h1 class="text-3xl font-bold mb-4">Admin Panel</h1>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl mb-4">သုံးစွဲသူစီမံခန့်ခွဲမှု</h2>
+            <div class="mb-4">
+                <label class="block text-sm">Gmail</label>
+                <input type="email" id="userEmail" class="w-full p-2 bg-gray-700 rounded">
+                <button id="searchUser" class="mt-2 bg-blue-600 p-2 rounded hover:bg-blue-700">ရှာရန်</button>
+            </div>
+            <div id="userInfo" class="mt-4"></div>
+            <div class="mt-4">
+                <h3 class="text-lg">ငွေသွင်း/ထုတ်</h3>
+                <input type="number" id="transactionAmount" class="w-full p-2 bg-gray-700 rounded" min="1">
+                <button id="deposit" class="mt-2 bg-green-600 p-2 rounded hover:bg-green-700">ငွေသွင်းရန်</button>
+                <button id="withdraw" class="mt-2 bg-red-600 p-2 rounded hover:bg-red-700">ငွေထုတ်ရန်</button>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-lg">ဂိမ်းထိန်းချုပ်မှု</h3>
+                <label class="block text-sm">X တန်ဖိုးသတ်မှတ်ရန် (ထည့်မထားပါက အလိုအလျောက်)</label>
+                <input type="number" id="crashPoint" class="w-full p-2 bg-gray-700 rounded" step="0.1">
+                <button id="setCrash" class="mt-2 bg-yellow-600 p-2 rounded hover:bg-yellow-700">ပေါက်ကွဲစေရန်</button>
+                <button id="autoCrash" class="mt-2 bg-purple-600 p-2 rounded hover:bg-purple-700">အလိုအလျောက်ထိန်းချုပ်ရန်</button>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-lg">သုံးစွဲသူများ၏ Transaction History</h3>
+                <ul id="transactionHistory" class="list-disc pl-5"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "OPPER_MMR_KEY";
+        const API_URL = "OPPER_MMR_URL";
+
+        document.getElementById("searchUser").addEventListener("click", async () => {
+            const email = document.getElementById("userEmail").value;
+            const response = await fetch(`${API_URL}/user/${email}`, {
+                headers: { "Authorization": API_KEY }
+            });
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById("userInfo").innerHTML = `
+                    <p>အမည်: ${data.user.name}</p>
+                    <p>Gmail: ${data.user.email}</p>
+                    <p>ဖုန်းနံပါတ်: ${data.user.phone}</p>
+                    <p>လက်ကျန်ငွေ: ${data.user.balance}</p>
+                `;
+                fetchTransactionHistory(email);
+            }
+        });
+
+        document.getElementById("deposit").addEventListener("click", async () => {
+            const email = document.getElementById("userEmail").value;
+            const amount = parseFloat(document.getElementById("transactionAmount").value);
+            const response = await fetch(`${API_URL}/deposit`, {
+                method: "POST",
+                headers: { "Authorization": API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({ email, amount })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(`ငွေသွင်းပြီးပါပြီ! လက်ကျန်ငွေ: ${data.newBalance}`);
+                fetchTransactionHistory(email);
+            }
+        });
+
+        document.getElementById("withdraw").addEventListener("click", async () => {
+            const email = document.getElementById("userEmail").value;
+            const amount = parseFloat(document.getElementById("transactionAmount").value);
+            const response = await fetch(`${API_URL}/withdraw`, {
+                method: "POST",
+                headers: { "Authorization": API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({ email, amount })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(`ငွေထုတ်ပြီးပါပြီ! လက်ကျန်ငွေ: ${data.newBalance}`);
+                fetchTransactionHistory(email);
+            }
+        });
+
+        document.getElementById("setCrash").addEventListener("click", async () => {
+            const crashPoint = parseFloat(document.getElementById("crashPoint").value);
+            const response = await fetch(`${API_URL}/setCrash`, {
+                method: "POST",
+                headers: { "Authorization": API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({ crashPoint })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert(`ဂိမ်းပေါက်ကွဲမှု ${crashPoint}x တွင် သတ်မှတ်ပြီးပါပြီ!`);
+            }
+        });
+
+        document.getElementById("autoCrash").addEventListener("click", async () => {
+            const response = await fetch(`${API_URL}/autoCrash`, {
+                method: "POST",
+                headers: { "Authorization": API_KEY }
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert("အလိုအလျောက်ထိန်းချုပ်မှုကို ဖွင့်လိုက်ပါပြီ!");
+            }
+        });
+
+        async function fetchTransactionHistory(email) {
+            const response = await fetch(`${API_URL}/history/${email}`, {
+                headers: { "Authorization": API_KEY }
+            });
+            const data = await response.json();
+            const history = document.getElementById("transactionHistory");
+            history.innerHTML = "";
+            data.history.forEach(item => {
+                history.innerHTML += `<li>${item.type}: ${item.amount} (${item.date}) - ${item.status}</li>`;
+            });
+        }
+    </script>
+</body>
+</html>
