@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes ballMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(300px, -200px); }
+        }
+        .ball {
+            animation: ballMove 5s ease-in-out infinite;
+        }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+    <!-- Sign Up Page -->
+    <div id="signup" class="min-h-screen flex items-center justify-center hidden">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-6 text-center">အကောင့်ဖွင့်ရန်</h2>
+            <form id="signupForm">
+                <div class="mb-4">
+                    <label class="block text-sm">အမည်</label>
+                    <input type="text" id="name" class="w-full p-2 bg-gray-700 rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm">Gmail</label>
+                    <input type="email" id="email" class="w-full p-2 bg-gray-700 rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm">ဖုန်းနံပါတ်</label>
+                    <input type="tel" id="phone" class="w-full p-2 bg-gray-700 rounded" pattern="\+?[0-9]{9,12}" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm">စကားဝှက်</label>
+                    <input type="password" id="password" class="w-full p-2 bg-gray-700 rounded" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 p-2 rounded hover:bg-blue-700">အကောင့်ဖွင့်ရန်</button>
+            </form>
+            <p class="mt-4 text-center">အကောင့်ရှိပြီးသားလား? <a href="#" onclick="showLogin()" class="text-blue-400">ဝင်ရောက်ရန်</a></p>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login" class="min-h-screen flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-6 text-center">ဝင်ရောက်ရန်</h2>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-sm">Gmail/ဖုန်းနံပါတ်</label>
+                    <input type="text" id="loginId" class="w-full p-2 bg-gray-700 rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm">စကားဝှက်</label>
+                    <input type="password" id="loginPassword" class="w-full p-2 bg-gray-700 rounded" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 p-2 rounded hover:bg-blue-700">ဝင်ရောက်ရန်</button>
+            </form>
+            <p class="mt-4 text-center">အကောင့်မရှိသေးဘူးလား? <a href="#" onclick="showSignup()" class="text-blue-400">အကောင့်ဖွင့်ရန်</a></p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="min-h-screen p-4 hidden">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-3xl font-bold">Cash Game Dashboard</h1>
+            <div>လက်ကျန်ငွေ: <span id="balance">0</span></div>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div class="text-center mb-4">
+                <h2 class="text-xl">ဂိမ်းအခြေအနေ</h2>
+                <div id="multiplier" class="text-4xl font-bold">1x</div>
+                <div class="relative w-64 h-64 mx-auto">
+                    <div class="ball absolute w-12 h-12 bg-red-600 rounded-full"></div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm">လောင်းကြေးပမာဏ</label>
+                <input type="number" id="betAmount" class="w-full p-2 bg-gray-700 rounded" min="1">
+                <button id="placeBet" class="mt-2 bg-green-600 p-2 rounded hover:bg-green-700">လောင်းကြေးတင်ရန်</button>
+                <button id="cashOut" class="mt-2 bg-yellow-600 p-2 rounded hover:bg-yellow-700 hidden">Cash Out</button>
+            </div>
+            <div id="error" class="error hidden"></div>
+            <div id="success" class="success hidden"></div>
+            <div class="mt-4">
+                <h3 class="text-lg">ယခင်ပွဲများ</h3>
+                <ul id="pastGames" class="list-disc pl-5"></ul>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-lg">Live လောင်းကြေးများ</h3>
+                <ul id="liveBets" class="list-disc pl-5"></ul>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-lg">Cash Out စုစုပေါင်း</h3>
+                <div id="totalCashOut">0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "OPPER_MMR_KEY";
+        const API_URL = "OPPER_MMR_URL";
+
+        function showSignup() {
+            document.getElementById("signup").classList.remove("hidden");
+            document.getElementById("login").classList.add("hidden");
+            document.getElementById("dashboard").classList.add("hidden");
+        }
+
+        function showLogin() {
+            document.getElementById("signup").classList.add("hidden");
+            document.getElementById("login").classList.remove("hidden");
+            document.getElementById("dashboard").classList.add("hidden");
+        }
+
+        function showDashboard() {
+            document.getElementById("signup").classList.add("hidden");
+            document.getElementById("login").classList.add("hidden");
+            document.getElementById("dashboard").classList.remove("hidden");
+        }
+
+        document.getElementById("signupForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const phone = document.getElementById("phone").value;
+            const password = document.getElementById("password").value;
+
+            const response = await fetch(`${API_URL}/signup`, {
+                method: "POST",
+                headers: { "Authorization": API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, phone, password })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert("အကောင့်ဖွင့်ပြီးပါပြီ!");
+                showLogin();
+            } else {
+                document.getElementById("error").classList.remove("hidden");
+                document.getElementById("error").textContent = data.message;
+            }
+        });
+
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const loginId = document.getElementById("loginId").value;
+            const password = document.getElementById("loginPassword").value;
+
+            const response = await fetch(`${API_URL}/login`, {
+                method: "POST",
+                headers: { "Authorization": API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({ loginId, password })
+            });
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById("balance").textContent = data.balance;
+                showDashboard();
+            } else {
+                document.getElementById("error").classList.remove("hidden");
+                document.getElementById("error").textContent = data.message;
+            }
+        });
+
+        let multiplier = 1;
+        let gameRunning = false;
+        let betPlaced = false;
+
+        document.getElementById("placeBet").addEventListener("click", async () => {
+            if (gameRunning) return;
+            const amount = parseFloat(document.getElementById("betAmount").value);
+            const response = await fetch(`${API_URL}/placeBet`, {
+                method: "POST",
+                headers: { "Authorization": API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({ amount })
+            });
+            const data = await response.json();
+            if (data.success) {
+                betPlaced = true;
+                document.getElementById("placeBet").classList.add("hidden");
+                document.getElementById("cashOut").classList.remove("hidden");
+                document.getElementById("success").classList.remove("hidden");
+                document.getElementById("success").textContent = `လောင်းကြေး ${amount} တင်ပြီးပါပြီ!`;
+                startGame();
+            } else {
+                document.getElementById("error").classList.remove("hidden");
+                document.getElementById("error").textContent = data.message;
+            }
+        });
+
+        document.getElementById("cashOut").addEventListener("click", async () => {
+            if (!gameRunning) return;
+            const response = await fetch(`${API_URL}/cashOut`, {
+                method: "POST",
+                headers: { "Authorization": API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({ multiplier })
+            });
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById("success").classList.remove("hidden");
+                document.getElementById("success").textContent = `Cash Out ပြီးပါပြီ! အမြတ်: ${data.profit}`;
+                document.getElementById("balance").textContent = data.newBalance;
+                betPlaced = false;
+            }
+        });
+
+        async function startGame() {
+            gameRunning = true;
+            multiplier = 1;
+            const interval = setInterval(() => {
+                multiplier += 0.1;
+                document.getElementById("multiplier").textContent = `${multiplier.toFixed(1)}x`;
+                if (Math.random() < 0.05) { // Random crash
+                    clearInterval(interval);
+                    gameRunning = false;
+                    betPlaced = false;
+                    document.getElementById("cashOut").classList.add("hidden");
+                    document.getElementById("placeBet").classList.remove("hidden");
+                    document.getElementById("pastGames").innerHTML += `<li>ပွဲပြီးဆုံးသွားပါပြီ: ${multiplier.toFixed(1)}x</li>`;
+                    fetchLiveBets();
+                }
+            }, 100);
+            setTimeout(() => {
+                if (gameRunning) {
+                    document.getElementById("placeBet").classList.remove("hidden");
+                    document.getElementById("cashOut").classList.add("hidden");
+                }
+            }, 10000);
+        }
+
+        async function fetchLiveBets() {
+            const response = await fetch(`${API_URL}/liveBets`, {
+                headers: { "Authorization": API_KEY }
+            });
+            const data = await response.json();
+            const liveBets = document.getElementById("liveBets");
+            liveBets.innerHTML = "";
+            data.bets.forEach(bet => {
+                liveBets.innerHTML += `<li>${bet.user}: ${bet.amount} (x${bet.multiplier})</li>`;
+            });
+            document.getElementById("totalCashOut").textContent = data.totalCashOut;
+        }
+    </script>
+</body>
+</html>
