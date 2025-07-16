@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+    <div class="p-4">
+        <h1 class="text-3xl font-bold mb-4">Database Management</h1>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl mb-4">API Key နဲ့ URL</h2>
+            <p>API Key: <span id="apiKey">OPPER_MMR_KEY</span></p>
+            <p>API URL: <span id="apiUrl">OPPER_MMR_URL</span></p>
+            <button id="generateApiKey" class="mt-4 bg-blue-600 p-2 rounded hover:bg-blue-700">API Key အသစ်ထုတ်ရန်</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("generateApiKey").addEventListener("click", async () => {
+            const newKey = `key_${Math.random().toString(36).substring(2)}`;
+            const newUrl = `https://${window.location.host}/api`;
+            document.getElementById("apiKey").textContent = newKey;
+            document.getElementById("apiUrl").textContent = newUrl;
+            // In a real scenario, save the new key to a secure storage
+            alert(`New API Key: ${newKey}\nNew API URL: ${newUrl}`);
+        });
+    </script>
+</body>
+</html>
